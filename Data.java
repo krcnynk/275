@@ -9,58 +9,58 @@ public class Data {
     static CategoriesList cList = new CategoriesList();
     static BuiltDayList bdList = new BuiltDayList();
 
-    Data(){}
+    public Data(){}
 
-    static void setTaskList(TaskList tl){
+    public static void setTaskList(TaskList tl){
         tList = tl;
     }
 
-    static void setDayList(DayList dl){
+    public static void setDayList(DayList dl){
         dList = dl;
     }
 
-    static void setLevelsList(LevelsOfDifficultyList ll){
+    public static void setLevelsList(LevelsOfDifficultyList ll){
         lList = ll;
     }
 
-    static void setCategoriesList(CategoriesList cl){
+    public static void setCategoriesList(CategoriesList cl){
         cList = cl;
     }
 
-    static void setBuiltDaysList(BuiltDayList bdl){
+    public static void setBuiltDaysList(BuiltDayList bdl){
         bdList = bdl;
     }
 
-    static TaskList getTaskList(){
+    public static TaskList getTaskList(){
         return tList;
     }
 
-    static DayList getDayList(){
+    public static DayList getDayList(){
         return dList;
     }
 
-    static LevelsOfDifficultyList getLevels(){
+    public static LevelsOfDifficultyList getLevels(){
         return lList;
     }
 
-    static CategoriesList getCategories(){
+    public static CategoriesList getCategories(){
         return cList;
     }
 
-    static BuiltDayList getBuiltDayList(){
+    public static BuiltDayList getBuiltDayList(){
         return bdList;
     }
 
     //support function for TaskList and ScheduleBuilder
     //finds difference between 2 dates in days (start and end dates included)
-    static int difference(Date smallest, Date biggest){
+    public static int difference(Date smallest, Date biggest){
         long s = smallest.getTime();
         long b = biggest.getTime();
         long diffTime = b - s;
         return (int) (diffTime / (1000 * 60 * 60 * 24)) + 1;
     }
 
-    static void printBDList(){
+    public static void printBDList(){
         for(int i = 0; i < bdList.getSize(); i++){
             System.out.println("Day " + (i + 1) + ": ");
             for(int j = 0; j < bdList.builtDays.get(i).builtTasks.size(); j++){
