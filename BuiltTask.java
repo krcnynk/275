@@ -10,7 +10,6 @@ public class BuiltTask {
         this.hours = hours;
         this.percentage = percentage;
     }
-
     void setName(String name){
         this.name = name;
     }
@@ -20,7 +19,6 @@ public class BuiltTask {
     void setPercentage(double p){
         this.percentage = p;
     }
-
     String getName(){
         return name;
     }

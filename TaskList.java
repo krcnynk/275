@@ -7,16 +7,31 @@ import java.util.concurrent.TimeUnit;
 
 
 public class TaskList {
-    Vector<Task> tasks;
-    Vector<Date> criticalDays;
-    Date earliest;
-    Date latest;
-    long duration = 0;
 
+    private Vector<Task> tasks;
+    private Vector<Date> criticalDays;
+    private Date earliest;
+    private Date latest;
+    long duration = 0;
 
     TaskList(){
         tasks = new Vector<Task>();
         criticalDays = new Vector<Date>();
+    }
+    public long getDuration() {
+        return duration;
+    }
+    public Vector<Task> getTasks() {
+        return tasks;
+    }
+    public Vector<Date> getCriticalDays() {
+        return criticalDays;
+    }
+    public Date getEarliest() {
+        return earliest;
+    }
+    public Date getLatest() {
+        return latest;
     }
 
     //add task
@@ -76,7 +91,6 @@ public class TaskList {
         addCriticalDate(new Date(t.getDeadline().getTime() + TimeUnit.DAYS.toMillis(1))); //add day after deadline
         return 0;
     }
-
     void addCriticalDate(Date d){
         if(criticalDays.size() == 0){
             criticalDays.add(d);
@@ -95,20 +109,15 @@ public class TaskList {
             }
         }
     }
-
     void removeTask(Task t){
         tasks.remove(t);
         //update critical dates
         //update earliest
         //update latest
     }
-
-
-
     int getSize(){
         return tasks.size();
     }
-
     void printCriticalDays(){
         String pattern = "yyyy-MM-dd";
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);

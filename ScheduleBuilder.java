@@ -1,5 +1,4 @@
 package com.company;
-import jdk.jshell.EvalException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -48,7 +47,7 @@ class ScheduleBuilder {
 
     private void setTotalHours(){
         for(int i = 0; i < Data.getTaskList().getSize(); i++){
-            totalHours += Data.getTaskList().tasks.get(i).getHours();
+            totalHours += Data.getTaskList().getTasks().get(i).getHours();
         }
     }
 
@@ -56,22 +55,22 @@ class ScheduleBuilder {
         int jump;
         Date current;
         Zone zone;
-        for(int i = 0; i < Data.getTaskList().criticalDays.size() - 1; i++){ //for each critical date
+        for(int i = 0; i < Data.getTaskList().getCriticalDays().size() - 1; i++){ //for each critical date
             zone = new Zone(); //make zone
             zone.zoneOrderInTime = i; //set order
 
             //zone duration
-            current = Data.getTaskList().criticalDays.get(i);
-            jump = Data.difference(Data.getTaskList().criticalDays.get(i), Data.getTaskList().criticalDays.get(i + 1)) -1;
+            current = Data.getTaskList().getCriticalDays().get(i);
+            jump = Data.difference(Data.getTaskList().getCriticalDays().get(i), Data.getTaskList().getCriticalDays().get(i + 1)) -1;
             zone.duration = jump;
 
             //capacity of each task
             double totalAvgHours = 0;
             double avgHours;
             for(int j = 0; j < Data.getTaskList().getSize(); j++){
-                if(Data.getTaskList().tasks.get(j).getStart().compareTo(current) <= 0 && Data.getTaskList().tasks.get(j).getDeadline().compareTo(current) >= 0){
-                    avgHours = Data.getTaskList().tasks.get(j).getHrsPerDay();
-                    zone.capacity.put(Data.getTaskList().tasks.get(j).getName(), avgHours*zone.duration);
+                if(Data.getTaskList().getTasks().get(j).getStart().compareTo(current) <= 0 && Data.getTaskList().getTasks().get(j).getDeadline().compareTo(current) >= 0){
+                    avgHours = Data.getTaskList().getTasks().get(j).getHrsPerDay();
+                    zone.capacity.put(Data.getTaskList().getTasks().get(j).getName(), avgHours*zone.duration);
                     totalAvgHours += avgHours;
                 }
             }
@@ -310,10 +309,6 @@ class ScheduleBuilder {
             }
 
             //ideal hours to transfer for connected zone (base on duration)
-            double c = zonesByDates.get(zone.connections.get(i).dateIndex).duration;
-            c = zonesByDates.get(zone.connections.get(i).dateIndex).zoneOrderInTime;
-            double a = zonesByDates.get(zone.connections.get(i).dateIndex).duration*imbalanceForDay;
-            double b = zonesByDates.get(zone.connections.get(i).dateIndex).imbalance;
             double hoursToTransfer = zonesByDates.get(zone.connections.get(i).dateIndex).duration*imbalanceForDay - zonesByDates.get(zone.connections.get(i).dateIndex).imbalance;
 
                 //if no balance yet
@@ -394,7 +389,7 @@ class ScheduleBuilder {
         Set<String> tasks;
         for(Zone z: zonesByDates){
             for(int i = 0; i< z.duration; i++){
-                day = new BuiltDay(new Date(Data.getTaskList().earliest.getTime() + TimeUnit.DAYS.toMillis(pastDurations + i)));
+                day = new BuiltDay(new Date(Data.getTaskList().getEarliest().getTime() + TimeUnit.DAYS.toMillis(pastDurations + i)));
                 tasks = z.capacity.keySet();
                 for(String t: tasks){
                     if(z.capacity.get(t) == 0){
@@ -402,8 +397,8 @@ class ScheduleBuilder {
                     }
                     double percentage = 0;
                     for(int j = 0; j < Data.getTaskList().getSize(); j++){
-                        if(Data.getTaskList().tasks.get(j).getName().equals(t)){
-                            percentage = 100*z.capacity.get(t)/z.duration/Data.getTaskList().tasks.get(j).getHours();
+                        if(Data.getTaskList().getTasks().get(j).getName().equals(t)){
+                            percentage = 100*z.capacity.get(t)/z.duration/Data.getTaskList().getTasks().get(j).getHours();
                             break;
                         }
                     }

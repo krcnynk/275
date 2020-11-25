@@ -2,20 +2,24 @@ package com.company;
 import java.util.Vector;
 
 public class BuiltDayList {
-    Vector<BuiltDay> builtDays;
+    private Vector<BuiltDay> builtDays;
 
     BuiltDayList(){
         builtDays = new Vector<BuiltDay>();
     }
-
+    Vector<BuiltDay> getBuiltDays() {
+        return builtDays;
+    }
+    void setBuiltDays(Vector<BuiltDay> builtDays) {
+        this.builtDays = builtDays;
+    }
     void addBDay(BuiltDay bd){
         builtDays.add(bd);
     }
-
     int getSize(){
         return builtDays.size();
     }
-
+/*
     void print(){
         for(int i = 0; i < builtDays.size(); i++){
 
@@ -29,4 +33,6 @@ public class BuiltDayList {
             }
         }
     }
+
+ */
 }

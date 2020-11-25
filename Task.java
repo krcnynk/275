@@ -13,7 +13,7 @@ public class Task {
     private int category;
     private boolean priority;
 
-    Task(String name, Date start, Date deadline, double hours, boolean prioritized){
+    public Task(String name, Date start, Date deadline, double hours, boolean prioritized){
         this.name = name;
         this.start = start;
         this.deadline = deadline;
@@ -23,7 +23,6 @@ public class Task {
         setDuration();
         hrsPerDay = hours/duration;
     }
-
     void setName(String name){
         this.name = name;
 
@@ -52,7 +51,13 @@ public class Task {
     void setPriority(boolean priority){
         this.priority = priority;
     }
-
+    private void setDuration(){
+        long startTime = start.getTime();
+        long dueTime = deadline.getTime();
+        long diffTime = dueTime - startTime;
+        long diffDays = diffTime / (1000 * 60 * 60 * 24) + 1;
+        duration = (int) diffDays;
+    }
     String getName(){
         return name;
     }
@@ -79,12 +84,4 @@ public class Task {
     }
     int getDuration(){return duration;}
     double getHrsPerDay(){return hrsPerDay;}
-
-    private void setDuration(){
-        long startTime = start.getTime();
-        long dueTime = deadline.getTime();
-        long diffTime = dueTime - startTime;
-        long diffDays = diffTime / (1000 * 60 * 60 * 24) + 1;
-        duration = (int) diffDays;
-    }
 }
