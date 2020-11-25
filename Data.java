@@ -64,13 +64,13 @@ public class Data {
         for(int i = 0; i < bdList.getSize(); i++){
             System.out.println("Day " + (i + 1) + ": ");
             for(int j = 0; j < bdList.builtDays.get(i).builtTasks.size(); j++){
-                System.out.println(" Task " + (j + 1));
-                System.out.println("  name: " + bdList.builtDays.get(i).builtTasks.get(j).getName());
-                System.out.println("  hours: " + bdList.builtDays.get(i).builtTasks.get(j).getHours());
-                System.out.println("  percentage: " + bdList.builtDays.get(i).builtTasks.get(j).getPercentage());
+                //System.out.println(" Task " + (j + 1));
+                System.out.println(bdList.builtDays.get(i).builtTasks.get(j).getName());
+                System.out.println("   hours: " + String.format("%.2f", bdList.builtDays.get(i).builtTasks.get(j).getHours()));
+                System.out.println("   percentage: " + String.format("%.2f", bdList.builtDays.get(i).builtTasks.get(j).getPercentage()));
 
             }
-            System.out.println(" total hours: " + bdList.builtDays.get(i).getTotalHours());
+            System.out.println("total hours: " + String.format("%.2f", bdList.builtDays.get(i).getTotalHours()));
             System.out.println("\n");
         }
     }

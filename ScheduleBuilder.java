@@ -1,4 +1,6 @@
 package com.company;
+import jdk.jshell.EvalException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -10,7 +12,6 @@ class ScheduleBuilder {
     private int duration;
     private Vector<Zone> zonesByPriority = new Vector<>();
     private Vector<Zone> zonesByDates = new Vector<>();
-    private int[] sortedZonesIndexes;
 
     ScheduleBuilder(){
         setTotalHours();
@@ -26,9 +27,6 @@ class ScheduleBuilder {
         int zoneIndex;
         double imbalance;
         int duration;
-        double hrsPerDay;
-        boolean isBalanced = false;
-        boolean isSorted = false;
         Vector<Connection> connections;
         Hashtable<String, Double> capacity = new Hashtable<>();
         Zone(){}
@@ -77,14 +75,8 @@ class ScheduleBuilder {
                     totalAvgHours += avgHours;
                 }
             }
-
-            //total capacity
-            BigDecimal bd = new BigDecimal(totalAvgHours).setScale(2, RoundingMode.HALF_EVEN);
-            zone.hrsPerDay = bd.doubleValue();
             BigDecimal im = new BigDecimal((totalAvgHours - idealHoursPerDay)*zone.duration).setScale(2, RoundingMode.HALF_EVEN);
             zone.imbalance = im.doubleValue();
-
-
             //insert
             zonesByDates.add(zone);
         }
@@ -153,14 +145,10 @@ class ScheduleBuilder {
         for(Zone zone: zonesByPriority){
             MaximumTransferForOne(zone);
         }
-        /*
-        sortZones("imbalance");
-
-        for(int i = 0; i < zonesByPriority.size(); i++){
-            EqualizedTransferForOne(zonesByPriority.get(sortedZonesIndexes[i]));
+        System.out.println("Zones before sharing: \n");
+       for(int i = zonesByPriority.size() - 1; i >= 0; i--){
+            ShareImbalanceBetweenConnections(zonesByPriority.get(i));
         }
-
-         */
     }
 
     private void MaximumTransferForOne(Zone zoneToBalance){
@@ -207,7 +195,6 @@ class ScheduleBuilder {
                 break;
             }
         }
-        zoneToBalance.isBalanced = true;
     }
 
     private void BalanceTo(Zone to, Zone from, String task){
@@ -218,16 +205,17 @@ class ScheduleBuilder {
             return;
 
         double valueToTransfer;
-        if(-to.imbalance > from.capacity.get(task)){
+        if(-to.imbalance > from.capacity.get(task))
             valueToTransfer = from.capacity.get(task);
-        }else{
+        else
             valueToTransfer = -to.imbalance;
-        }
+        if(valueToTransfer <= 0)
+            return;
+
         from.capacity.put(task, from.capacity.get(task) - valueToTransfer);
         from.imbalance -= valueToTransfer;
         to.capacity.put(task, to.capacity.get(task) + valueToTransfer);
         to.imbalance += valueToTransfer;
-
         //System.out.println("Balance to Transfer " + valueToTransfer + " from zone " + (from.zoneOrderInTime + 1) + " to zone " + (to.zoneOrderInTime + 1) + " via " + task + "\n");
     }
 
@@ -245,12 +233,15 @@ class ScheduleBuilder {
             valueToTransfer = from.imbalance;
         }
 
+        if(valueToTransfer <= 0)
+            return;
+
         from.capacity.put(task, from.capacity.get(task) - valueToTransfer);
         from.imbalance -= valueToTransfer;
         to.capacity.put(task, to.capacity.get(task) + valueToTransfer);
         to.imbalance += valueToTransfer;
 
-        //System.out.println("Balance from Transfer " + valueToTransfer + " from zone " + (from.zoneOrderInTime + 1) + " to zone " + (to.zoneOrderInTime + 1) + " via " + task + "\n");
+       // System.out.println("Balance from Transfer " + valueToTransfer + " from zone " + (from.zoneOrderInTime + 1) + " to zone " + (to.zoneOrderInTime + 1) + " via " + task + "\n");
     }
 
     private void EqualizedTransfer(Zone to, Zone from, String task){
@@ -274,6 +265,88 @@ class ScheduleBuilder {
         to.imbalance += valueToTransfer;
 
         //System.out.println("Equalized Transfer " + valueToTransfer + " from zone " + (from.zoneOrderInTime + 1) + " to zone " + (to.zoneOrderInTime + 1) + " via " + task + "\n");
+    }
+
+    private void ShareImbalanceBetweenConnections(Zone zone){
+        if(Math.abs(zone.imbalance) == 0) //return if balanced
+            return;
+
+        if(zone.connections.size() == 0) //return if no connections
+            return;
+
+        double totalImbalance = zone.imbalance;
+        double totalDuration = zone.duration;
+        int previousIndex = -1;
+
+        //calculate total imbalance and total duration of connected zones + current one
+        for(int i = 0; i < zone.connections.size(); i++){
+            if(zone.connections.get(i).dateIndex == previousIndex) {
+                continue;
+            }else{
+                if(zone.imbalance/zone.duration > zonesByDates.get(zone.connections.get(i).dateIndex).imbalance/zonesByDates.get(zone.connections.get(i).dateIndex).duration){
+                    if(zone.capacity.get(zone.connections.get(i).taskName) == 0)
+                        continue;
+                }else{
+                    if(zonesByDates.get(zone.connections.get(i).dateIndex).capacity.get(zone.connections.get(i).taskName) == 0)
+                        continue;
+                }
+            }
+            //if not drained
+            previousIndex = zone.connections.get(i).dateIndex;
+            totalImbalance += zonesByDates.get(zone.connections.get(i).dateIndex).imbalance;
+            totalDuration += zonesByDates.get(zone.connections.get(i).dateIndex).duration;
+        }
+
+        double imbalanceForDay = totalImbalance/totalDuration;
+
+        //go through list of connections
+        for(int i = 0; i < zone.connections.size(); i++){
+            if(zone.imbalance > 0){
+                if(zone.capacity.get(zone.connections.get(i).taskName) == 0)
+                    continue;
+            }else{
+                if(zonesByDates.get(zone.connections.get(i).dateIndex).capacity.get(zone.connections.get(i).taskName) == 0)
+                    continue;
+            }
+
+            //ideal hours to transfer for connected zone (base on duration)
+            double c = zonesByDates.get(zone.connections.get(i).dateIndex).duration;
+            c = zonesByDates.get(zone.connections.get(i).dateIndex).zoneOrderInTime;
+            double a = zonesByDates.get(zone.connections.get(i).dateIndex).duration*imbalanceForDay;
+            double b = zonesByDates.get(zone.connections.get(i).dateIndex).imbalance;
+            double hoursToTransfer = zonesByDates.get(zone.connections.get(i).dateIndex).duration*imbalanceForDay - zonesByDates.get(zone.connections.get(i).dateIndex).imbalance;
+
+                //if no balance yet
+            if(hoursToTransfer != 0){
+                    //if value is positive
+                String taskName = zone.connections.get(i).taskName;
+                int connectionIndex = zone.connections.get(i).dateIndex;
+
+                if(hoursToTransfer > 0) {
+                    //check capacity of current zone
+                    if (zone.capacity.get(taskName) < hoursToTransfer) {
+                        //update value
+                        hoursToTransfer = zone.capacity.get(taskName);
+                    }
+                }else{ //if value is negative
+                        //check capacity of connection
+                    if (zonesByDates.get(connectionIndex).capacity.get(taskName) < -hoursToTransfer) {
+                        //update value
+                        hoursToTransfer = -zonesByDates.get(zone.connections.get(i).dateIndex).capacity.get(taskName);
+                    }
+                }
+                if(hoursToTransfer != 0)
+                    Transfer(zonesByDates.get(connectionIndex), zone, taskName, hoursToTransfer);
+            }
+        }
+    }
+
+    private void Transfer(Zone to, Zone from, String task, double valueToTransfer){
+        //System.out.println("Transfer " + valueToTransfer + " from " + (from.zoneOrderInTime + 1) + " to " + (to.zoneOrderInTime + 1) + " via " + task);
+        to.imbalance += valueToTransfer;
+        to.capacity.put(task, to.capacity.get(task) + valueToTransfer);
+        from.imbalance -= valueToTransfer;
+        from.capacity.put(task, from.capacity.get(task) - valueToTransfer);
     }
 
     private Vector<Connection> vectorOfConnections(Zone zone){
@@ -314,7 +387,6 @@ class ScheduleBuilder {
     }
 
     private void constructOutput(){
-
         BuiltDayList bdList = new BuiltDayList();
         BuiltDay day;
         BuiltTask task;
@@ -325,10 +397,14 @@ class ScheduleBuilder {
                 day = new BuiltDay(new Date(Data.getTaskList().earliest.getTime() + TimeUnit.DAYS.toMillis(pastDurations + i)));
                 tasks = z.capacity.keySet();
                 for(String t: tasks){
+                    if(z.capacity.get(t) == 0){
+                        continue;
+                    }
                     double percentage = 0;
                     for(int j = 0; j < Data.getTaskList().getSize(); j++){
-                        if(Data.getTaskList().tasks.get(j).getName() == t){
-                            percentage = z.capacity.get(t)/Data.getTaskList().tasks.get(j).getHours();
+                        if(Data.getTaskList().tasks.get(j).getName().equals(t)){
+                            percentage = 100*z.capacity.get(t)/z.duration/Data.getTaskList().tasks.get(j).getHours();
+                            break;
                         }
                     }
                     task = new BuiltTask(t, z.capacity.get(t)/z.duration, percentage);
@@ -350,7 +426,7 @@ class ScheduleBuilder {
         for(Zone zone: zonesByDates){
             System.out.println("  zone " + (zone.zoneOrderInTime + 1) + ": duration = " + zone.duration);
             System.out.println("  Index = " + zone.zoneIndex);
-            System.out.println("  Hours per day: " + zone.hrsPerDay);
+            //System.out.println("  Hours per day: " + zone.hrsPerDay);
             System.out.println("  Imbalance:  " + String.format("%.2f",zone.imbalance));
             System.out.print("   ");
             System.out.println(zone.capacity);
@@ -368,48 +444,5 @@ class ScheduleBuilder {
             System.out.println('\n');
         }
         */
-    }
-    private void sortZones(String method){
-        sortedZonesIndexes = new int[zonesByPriority.size()];
-        System.out.println("SORT:");
-        if(method.equals("imbalance")){
-            for(int i = 0; i < zonesByPriority.size(); i++){
-                int max = 0;
-                for(int k = 0; k < zonesByPriority.size(); k++){
-                    if(!zonesByPriority.get(k).isSorted) {
-                        max = k;
-                        break;
-                    }
-                }
-
-                for(int j = 0; j < zonesByPriority.size(); j++){ //find index of most balanced zone left
-
-                    double a = zonesByPriority.get(j).imbalance;
-                    double b = zonesByPriority.get(max).imbalance;
-                    if(!zonesByPriority.get(j).isSorted && Math.abs(zonesByPriority.get(j).imbalance) > Math.abs(zonesByPriority.get(max).imbalance)){
-                        max = j;
-                    }
-                }
-                zonesByPriority.get(max).isSorted = true;
-                sortedZonesIndexes[i] = max;
-                System.out.println(zonesByPriority.get(max).zoneOrderInTime + 1);
-            }
-        }
-    }
-    private void EqualizedTransferForOne(Zone zoneToBalance) {
-
-        double initialImbalance = zoneToBalance.imbalance;
-        for(Connection connection: zoneToBalance.connections){
-
-            if(zoneToBalance.imbalance > 0){
-                EqualizedTransfer(zonesByPriority.get(connection.zoneIndex), zoneToBalance, connection.taskName);
-            }else{
-                EqualizedTransfer(zoneToBalance, zonesByPriority.get(connection.zoneIndex), connection.taskName);
-            }
-
-            if(initialImbalance*zoneToBalance.imbalance <= 0){
-                break;
-            }
-        }
     }
 }
