@@ -1,6 +1,5 @@
 package com.company;
-import com.ScheduleBuilder.ScheduleBuilder;
-import com.export.ExportImportData;
+import ScheduleBuilder.ScheduleBuilder;
 
 import java.util.Calendar;
 import java.util.Date;
