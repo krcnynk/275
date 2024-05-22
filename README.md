@@ -1,6 +1,6 @@
 # Calendar Application
-Calendar planner written in Java, automatically divides workload to manageable chunks and displays them for the user.
 
+Calendar planner written in Java, automatically divides workload to manageable chunks and displays them for the user.
 1. This project has .form files so you need to build like an Application, Run/Debug configurations.
 This needs Settings->GUI Designer->Java source code option enabled.
 2. Please download maven dependencies via maven
